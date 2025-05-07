@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление цветомузыкой</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 700px; margin: auto; background-color: #f4f4f4; }
+        .container { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #333; }
+        h2 { margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type=range], input[type=number], input[type=color], select {
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        input[type=color] { padding: 2px; height: 38px; }
+        input[type=range] { padding: 0; }
+        .range-value { display: inline-block; margin-left: 10px; font-weight: bold; color: #007bff; min-width: 30px; text-align: right; }
+        button[type=submit] {
+            display: block; width: 100%; background-color: #007bff; color: white;
+            padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer;
+            font-size: 16px; margin-top: 20px; transition: background-color 0.3s ease;
+        }
+        button[type=submit]:hover { background-color: #0056b3; }
+        .mode-selector label { display: inline-block; margin-right: 15px; }
+        .settings-section { border: 1px dashed #ddd; padding: 15px; margin-top: 15px; border-radius: 5px; background-color: #fafafa;}
+        .hidden { display: none; } /* Класс для скрытия секций */
+         /* Стили для flash сообщений */
+        .flash { padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid transparent; }
+        .flash.success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .flash.danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .flash.warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .flash.info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Панель управления цветомузыкой</h1>
+
+        <!-- Область для flash сообщений -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('update_settings') }}" method="post">
+            <!-- Выбор режима -->
+            <div class="mode-selector">
+                <label><strong>Режим работы:</strong></label><br>
+                <input type="radio" id="mode0" name="mode" value="0" {% if settings.mode == 0 %}checked{% endif %} onchange="updateFormVisibility()">
+                <label for="mode0">VU Метр (Зеленый-Красный)</label><br>
+                <input type="radio" id="mode1" name="mode" value="1" {% if settings.mode == 1 %}checked{% endif %} onchange="updateFormVisibility()">
+                <label for="mode1">VU Метр (Радуга)</label><br>
+                <input type="radio" id="mode2" name="mode" value="2" {% if settings.mode == 2 %}checked{% endif %} onchange="updateFormVisibility()">
+                <label for="mode2">Вспышка на пиках</label>
+            </div>
+
+            <!-- Настройки VU Метр (Зеленый-Красный) -->
+            <div id="vu-green-red-settings" class="settings-section {% if settings.mode != 0 %}hidden{% endif %}">
+                <h2>Настройки VU (Зеленый-Красный)</h2>
+                <div>
+                    <label for="vu_gr_sensitivity">Чувствительность (<span class="range-value" id="vu_gr_sensitivity_val">{{ settings.vu_green_red.sensitivity }}</span>%):</label>
+                    <input type="range" id="vu_gr_sensitivity" name="vu_gr_sensitivity" min="0" max="100" value="{{ settings.vu_green_red.sensitivity }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="vu_gr_brightness">Яркость эффекта (<span class="range-value" id="vu_gr_brightness_val">{{ settings.vu_green_red.brightness }}</span>%):</label>
+                    <input type="range" id="vu_gr_brightness" name="vu_gr_brightness" min="0" max="100" value="{{ settings.vu_green_red.brightness }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="vu_gr_smoothing">Сглаживание (<span class="range-value" id="vu_gr_smoothing_val">{{ settings.vu_green_red.smoothing }}</span>%):</label>
+                    <input type="range" id="vu_gr_smoothing" name="vu_gr_smoothing" min="0" max="100" value="{{ settings.vu_green_red.smoothing }}" oninput="updateRangeValue(this.id)">
+                </div>
+                <div>
+                    <label for="vu_gr_bgColor">Цвет фона:</label>
+                    <input type="color" id="vu_gr_bgColor" name="vu_gr_bgColor" value="{{ settings.vu_green_red.bgColor }}">
+                </div>
+                 <div>
+                    <label for="vu_gr_bgBrightness">Яркость фона (<span class="range-value" id="vu_gr_bgBrightness_val">{{ settings.vu_green_red.bgBrightness }}</span>%):</label>
+                    <input type="range" id="vu_gr_bgBrightness" name="vu_gr_bgBrightness" min="0" max="100" value="{{ settings.vu_green_red.bgBrightness }}" oninput="updateRangeValue(this.id)">
+                </div>
+            </div>
+
+            <!-- Настройки VU Метр (Радуга) -->
+             <div id="vu-rainbow-settings" class="settings-section {% if settings.mode != 1 %}hidden{% endif %}">
+                <h2>Настройки VU (Радуга)</h2>
+                <div>
+                    <label for="vu_rb_sensitivity">Чувствительность (<span class="range-value" id="vu_rb_sensitivity_val">{{ settings.vu_rainbow.sensitivity }}</span>%):</label>
+                    <input type="range" id="vu_rb_sensitivity" name="vu_rb_sensitivity" min="0" max="100" value="{{ settings.vu_rainbow.sensitivity }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="vu_rb_brightness">Яркость эффекта (<span class="range-value" id="vu_rb_brightness_val">{{ settings.vu_rainbow.brightness }}</span>%):</label>
+                    <input type="range" id="vu_rb_brightness" name="vu_rb_brightness" min="0" max="100" value="{{ settings.vu_rainbow.brightness }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="vu_rb_smoothing">Сглаживание (<span class="range-value" id="vu_rb_smoothing_val">{{ settings.vu_rainbow.smoothing }}</span>%):</label>
+                    <input type="range" id="vu_rb_smoothing" name="vu_rb_smoothing" min="0" max="100" value="{{ settings.vu_rainbow.smoothing }}" oninput="updateRangeValue(this.id)">
+                </div>
+                <div>
+                    <label for="vu_rb_bgColor">Цвет фона:</label>
+                    <input type="color" id="vu_rb_bgColor" name="vu_rb_bgColor" value="{{ settings.vu_rainbow.bgColor }}">
+                </div>
+                 <div>
+                    <label for="vu_rb_bgBrightness">Яркость фона (<span class="range-value" id="vu_rb_bgBrightness_val">{{ settings.vu_rainbow.bgBrightness }}</span>%):</label>
+                    <input type="range" id="vu_rb_bgBrightness" name="vu_rb_bgBrightness" min="0" max="100" value="{{ settings.vu_rainbow.bgBrightness }}" oninput="updateRangeValue(this.id)">
+                </div>
+            </div>
+
+            <!-- Настройки Вспышка на пиках -->
+            <div id="flash-settings" class="settings-section {% if settings.mode != 2 %}hidden{% endif %}">
+                <h2>Настройки Вспышки</h2>
+                 <div>
+                    <label for="fl_sensitivity">Чувствительность (порог срабатывания) (<span class="range-value" id="fl_sensitivity_val">{{ settings.flash.sensitivity }}</span>%):</label>
+                    <input type="range" id="fl_sensitivity" name="fl_sensitivity" min="0" max="100" value="{{ settings.flash.sensitivity }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="fl_brightness">Яркость вспышки (<span class="range-value" id="fl_brightness_val">{{ settings.flash.brightness }}</span>%):</label>
+                    <input type="range" id="fl_brightness" name="fl_brightness" min="0" max="100" value="{{ settings.flash.brightness }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="fl_smoothing">Скорость затухания (<span class="range-value" id="fl_smoothing_val">{{ settings.flash.smoothing }}</span>%):</label>
+                     <input type="range" id="fl_smoothing" name="fl_smoothing" min="0" max="100" value="{{ settings.flash.smoothing }}" oninput="updateRangeValue(this.id)">
+                </div>
+                 <div>
+                    <label for="fl_color">Цвет вспышки:</label>
+                    <input type="color" id="fl_color" name="fl_color" value="{{ settings.flash.color }}">
+                </div>
+            </div>
+
+            <button type="submit">Применить настройки</button>
+        </form>
+    </div>
+
+    <script>
+        // Функция для обновления отображаемого значения ползунка
+        function updateRangeValue(rangeId) {
+            const rangeInput = document.getElementById(rangeId);
+            const valueSpan = document.getElementById(rangeId + '_val');
+            if (rangeInput && valueSpan) {
+                valueSpan.textContent = rangeInput.value;
+            }
+        }
+
+        // Функция для скрытия/отображения секций настроек в зависимости от выбранного режима
+        function updateFormVisibility() {
+            const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+            document.getElementById('vu-green-red-settings').classList.toggle('hidden', selectedMode !== '0');
+            document.getElementById('vu-rainbow-settings').classList.toggle('hidden', selectedMode !== '1');
+            document.getElementById('flash-settings').classList.toggle('hidden', selectedMode !== '2');
+
+            // Обновляем все значения ползунков при смене режима (на всякий случай)
+             const ranges = document.querySelectorAll('input[type=range]');
+             ranges.forEach(range => updateRangeValue(range.id));
+        }
+
+        // Вызываем функцию при загрузке страницы, чтобы установить правильную видимость
+        document.addEventListener('DOMContentLoaded', updateFormVisibility);
+    </script>
+</body>
+</html>
